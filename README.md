@@ -140,7 +140,7 @@ MIT License
 
 ## 👤 Author
 
-Your Name
+Aladin Zayegh
 
 ---
 
