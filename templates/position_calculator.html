@@ -1,0 +1,527 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Position Size Calculator</h1>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Journal</a>
+        </div>
+
+        <!-- Position Size Calculator -->
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Risk Calculator</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-3">Calculate your optimal position size based on your risk tolerance and stop loss.</p>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <strong>Account Settings</strong>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="account_size" class="form-label">Account Size</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" class="form-control" id="account_size" value="10000" min="100">
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="risk_percentage" class="form-label">Risk Per Trade</label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" id="risk_percentage" value="1" step="0.1" min="0.1" max="5">
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                            <small class="text-muted">Recommended: 1-2% of account balance</small>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="max_risk_amount" class="form-label">Max Risk Amount</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                <input type="text" class="form-control" id="max_risk_amount" readonly>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <strong>Trade Details</strong>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="trade_type" class="form-label">Trade Type</label>
+                                            <select class="form-select" id="trade_type">
+                                                <option value="Buy">Buy (Long)</option>
+                                                <option value="Sell">Sell (Short)</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="entry_price" class="form-label">Entry Price</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" class="form-control" id="entry_price" step="0.01" min="0.01" placeholder="0.00">
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="stop_loss" class="form-label">Stop Loss Price</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" class="form-control" id="stop_loss" step="0.01" min="0.01" placeholder="0.00">
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="profit_target" class="form-label">Profit Target <small class="text-muted">(Optional)</small></label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" class="form-control" id="profit_target" step="0.01" min="0.01" placeholder="0.00">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <strong>Stop Loss Calculator</strong>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="stop_loss_type" class="form-label">Stop Loss Type</label>
+                                                    <select class="form-select" id="stop_loss_type">
+                                                        <option value="price">Price Level</option>
+                                                        <option value="percent">Percentage</option>
+                                                        <option value="atr">ATR Multiple</option>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3" id="atr_input_container" style="display:none;">
+                                                    <label for="atr_value" class="form-label">ATR Value</label>
+                                                    <input type="number" class="form-control" id="atr_value" value="1" step="0.01" min="0.01">
+                                                    <small class="text-muted">Current ATR value for the instrument</small>
+                                                </div>
+                                                <div class="mb-3" id="atr_multiple_container" style="display:none;">
+                                                    <label for="atr_multiple" class="form-label">ATR Multiple</label>
+                                                    <input type="number" class="form-control" id="atr_multiple" value="2" step="0.1" min="0.1">
+                                                    <small class="text-muted">Recommended: 1.5-3x ATR</small>
+                                                </div>
+                                                <div class="mb-3" id="percent_container" style="display:none;">
+                                                    <label for="stop_loss_percent" class="form-label">Stop Loss Percentage</label>
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control" id="stop_loss_percent" value="2" step="0.1" min="0.1">
+                                                        <span class="input-group-text">%</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="trailing_stop" class="form-label">Trailing Stop</label>
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" id="trailing_stop">
+                                                        <label class="form-check-label" for="trailing_stop">Enable trailing stop</label>
+                                                    </div>
+                                                </div>
+                                                <div id="trailing_settings" style="display:none;">
+                                                    <div class="mb-3">
+                                                        <label for="activation_percent" class="form-label">Activation at Profit</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="activation_percent" value="2" step="0.1" min="0.1">
+                                                            <span class="input-group-text">%</span>
+                                                        </div>
+                                                        <small class="text-muted">When to start trailing</small>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label for="trailing_amount" class="form-label">Trailing Amount</label>
+                                                        <div class="input-group">
+                                                            <input type="number" class="form-control" id="trailing_amount" value="1" step="0.1" min="0.1">
+                                                            <span class="input-group-text">%</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="alert alert-info mt-3 mb-0">
+                                                    <i class="fas fa-info-circle me-2"></i>
+                                                    Your stop loss will be set at <span id="stop_loss_display">$0.00</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card bg-position-result">
+                                    <div class="card-header">
+                                        <strong>Position Size Results</strong>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Risk Per Share</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">$</span>
+                                                        <input type="text" class="form-control" id="risk_per_share" readonly>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Recommended Shares</label>
+                                                    <input type="text" class="form-control" id="recommended_shares" readonly>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Total Position Size</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">$</span>
+                                                        <input type="text" class="form-control" id="total_position_size" readonly>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Risk/Reward Ratio</label>
+                                                    <input type="text" class="form-control" id="risk_reward_ratio" readonly>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Risk Management Tips</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="risk-tips">
+                            <li><strong>1-2% Rule:</strong> Never risk more than 1-2% of your account on any single trade.</li>
+                            <li><strong>Position Sizing:</strong> Your position size should be calculated based on your stop loss, not arbitrary share counts.</li>
+                            <li><strong>Risk/Reward:</strong> Aim for at least a 2:1 or 3:1 reward-to-risk ratio on your trades.</li>
+                            <li><strong>Correlated Assets:</strong> Be cautious of taking multiple positions in correlated assets, as this increases effective risk exposure.</li>
+                            <li><strong>Market Conditions:</strong> Consider reducing position sizes during high volatility or uncertain market conditions.</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Calculation Methodology</h5>
+                    </div>
+                    <div class="card-body">
+                        <h6>Position Sizing Formula:</h6>
+                        <p><code>Max Shares = Risk Amount ÷ Risk Per Share</code></p>
+                        
+                        <h6>Risk Per Share:</h6>
+                        <p><code>Long Position: Entry Price - Stop Loss</code></p>
+                        <p><code>Short Position: Stop Loss - Entry Price</code></p>
+                        
+                        <h6>Risk/Reward Ratio:</h6>
+                        <p><code>Long: (Target - Entry) ÷ (Entry - Stop)</code></p>
+                        <p><code>Short: (Entry - Target) ÷ (Stop - Entry)</code></p>
+                        
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Position sizing is a critical component of risk management. It helps ensure that no single trade can significantly damage your account, regardless of the outcome.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get DOM elements
+        const accountSizeEl = document.getElementById('account_size');
+        const riskPercentageEl = document.getElementById('risk_percentage');
+        const maxRiskAmountEl = document.getElementById('max_risk_amount');
+        const tradeTypeEl = document.getElementById('trade_type');
+        const entryPriceEl = document.getElementById('entry_price');
+        const stopLossEl = document.getElementById('stop_loss');
+        const profitTargetEl = document.getElementById('profit_target');
+        const riskPerShareEl = document.getElementById('risk_per_share');
+        const recommendedSharesEl = document.getElementById('recommended_shares');
+        const totalPositionSizeEl = document.getElementById('total_position_size');
+        const riskRewardRatioEl = document.getElementById('risk_reward_ratio');
+        
+        // Get stop loss calculator elements
+        const stopLossTypeEl = document.getElementById('stop_loss_type');
+        const atrInputContainer = document.getElementById('atr_input_container');
+        const atrMultipleContainer = document.getElementById('atr_multiple_container');
+        const percentContainer = document.getElementById('percent_container');
+        const atrValueEl = document.getElementById('atr_value');
+        const atrMultipleEl = document.getElementById('atr_multiple');
+        const stopLossPercentEl = document.getElementById('stop_loss_percent');
+        const stopLossDisplayEl = document.getElementById('stop_loss_display');
+        const trailingStopEl = document.getElementById('trailing_stop');
+        const trailingSettingsEl = document.getElementById('trailing_settings');
+        const activationPercentEl = document.getElementById('activation_percent');
+        const trailingAmountEl = document.getElementById('trailing_amount');
+        
+        // Function to update UI based on stop loss type
+        function updateStopLossTypeUI() {
+            const stopLossType = stopLossTypeEl.value;
+            
+            // Hide all containers first
+            atrInputContainer.style.display = 'none';
+            atrMultipleContainer.style.display = 'none';
+            percentContainer.style.display = 'none';
+            
+            // Show the relevant containers based on the selected stop loss type
+            if (stopLossType === 'atr') {
+                atrInputContainer.style.display = 'block';
+                atrMultipleContainer.style.display = 'block';
+            } else if (stopLossType === 'percent') {
+                percentContainer.style.display = 'block';
+            }
+            
+            // Recalculate the stop loss
+            calculateStopLoss();
+        }
+        
+        // Function to toggle trailing stop settings
+        function toggleTrailingStopSettings() {
+            if (trailingStopEl.checked) {
+                trailingSettingsEl.style.display = 'block';
+            } else {
+                trailingSettingsEl.style.display = 'none';
+            }
+        }
+        
+        // Function to calculate stop loss based on selected method
+        function calculateStopLoss() {
+            const entryPrice = parseFloat(entryPriceEl.value);
+            const tradeType = tradeTypeEl.value;
+            const stopLossType = stopLossTypeEl.value;
+            
+            // If no entry price, we can't calculate
+            if (isNaN(entryPrice) || entryPrice <= 0) {
+                stopLossDisplayEl.textContent = '$0.00';
+                stopLossEl.value = '';
+                return;
+            }
+            
+            let stopLossPrice = 0;
+            
+            // Calculate stop loss based on the selected method
+            if (stopLossType === 'price') {
+                // Use the manually entered stop loss price
+                stopLossPrice = parseFloat(stopLossEl.value);
+                if (isNaN(stopLossPrice) || stopLossPrice <= 0) {
+                    stopLossDisplayEl.textContent = 'Please enter a valid stop loss price';
+                    return;
+                }
+            } else if (stopLossType === 'percent') {
+                // Calculate stop loss based on percentage
+                const stopLossPercent = parseFloat(stopLossPercentEl.value);
+                if (isNaN(stopLossPercent) || stopLossPercent <= 0) {
+                    stopLossDisplayEl.textContent = 'Please enter a valid percentage';
+                    return;
+                }
+                
+                // Calculate differently for long/short
+                if (tradeType === 'Buy') {
+                    // For long positions, stop is below entry
+                    stopLossPrice = entryPrice * (1 - (stopLossPercent / 100));
+                } else {
+                    // For short positions, stop is above entry
+                    stopLossPrice = entryPrice * (1 + (stopLossPercent / 100));
+                }
+            } else if (stopLossType === 'atr') {
+                // Calculate stop loss based on ATR multiple
+                const atrValue = parseFloat(atrValueEl.value);
+                const atrMultiple = parseFloat(atrMultipleEl.value);
+                
+                if (isNaN(atrValue) || atrValue <= 0 || isNaN(atrMultiple) || atrMultiple <= 0) {
+                    stopLossDisplayEl.textContent = 'Please enter valid ATR values';
+                    return;
+                }
+                
+                // Calculate the stop distance
+                const stopDistance = atrValue * atrMultiple;
+                
+                // Calculate differently for long/short
+                if (tradeType === 'Buy') {
+                    // For long positions, stop is below entry
+                    stopLossPrice = entryPrice - stopDistance;
+                } else {
+                    // For short positions, stop is above entry
+                    stopLossPrice = entryPrice + stopDistance;
+                }
+            }
+            
+            // Validate the calculated stop loss
+            if (stopLossPrice <= 0) {
+                stopLossDisplayEl.textContent = 'Invalid stop price calculated';
+                return;
+            }
+            
+            // Update the display and the stop loss input
+            stopLossDisplayEl.textContent = '$' + stopLossPrice.toFixed(2);
+            stopLossEl.value = stopLossPrice.toFixed(2);
+            
+            // Trigger position size calculation
+            calculatePositionSize();
+        }
+        
+        // Function to generate trailing stop explanation
+        function updateTrailingStopInfo() {
+            if (!trailingStopEl.checked) return;
+            
+            const entryPrice = parseFloat(entryPriceEl.value);
+            const activationPercent = parseFloat(activationPercentEl.value);
+            const trailingAmount = parseFloat(trailingAmountEl.value);
+            const tradeType = tradeTypeEl.value;
+            
+            if (isNaN(entryPrice) || entryPrice <= 0 || isNaN(activationPercent) || isNaN(trailingAmount)) {
+                return;
+            }
+            
+            // Calculate activation price
+            let activationPrice;
+            if (tradeType === 'Buy') {
+                activationPrice = entryPrice * (1 + (activationPercent / 100));
+            } else {
+                activationPrice = entryPrice * (1 - (activationPercent / 100));
+            }
+            
+            // Add trailing stop information to the display
+            stopLossDisplayEl.innerHTML = stopLossDisplayEl.textContent + 
+                `<br><small>Trailing stop will activate at $${activationPrice.toFixed(2)} (${activationPercent}% profit) and trail by ${trailingAmount}%</small>`;
+        }
+        
+        // Function to calculate position size
+        function calculatePositionSize() {
+            const accountSize = parseFloat(accountSizeEl.value);
+            const riskPercentage = parseFloat(riskPercentageEl.value);
+            const entryPrice = parseFloat(entryPriceEl.value);
+            const stopLoss = parseFloat(stopLossEl.value);
+            const profitTarget = parseFloat(profitTargetEl.value);
+            const tradeType = tradeTypeEl.value;
+            
+            // Calculate max risk amount
+            const maxRiskAmount = accountSize * (riskPercentage / 100);
+            maxRiskAmountEl.value = maxRiskAmount.toFixed(2);
+            
+            // Only calculate if we have valid entry and stop loss
+            if (!isNaN(entryPrice) && !isNaN(stopLoss) && stopLoss > 0) {
+                let riskPerShare;
+                
+                // Calculate risk per share differently for long vs short positions
+                if (tradeType === 'Buy') {
+                    // For long positions, risk is entry minus stop
+                    riskPerShare = entryPrice - stopLoss;
+                } else {
+                    // For short positions, risk is stop minus entry
+                    riskPerShare = stopLoss - entryPrice;
+                }
+                
+                // Validate that risk per share is positive
+                if (riskPerShare <= 0) {
+                    riskPerShareEl.value = 'Invalid Stop';
+                    recommendedSharesEl.value = 'N/A';
+                    totalPositionSizeEl.value = 'N/A';
+                    riskRewardRatioEl.value = 'N/A';
+                    return;
+                }
+                
+                riskPerShareEl.value = riskPerShare.toFixed(2);
+                
+                // Calculate recommended shares
+                const recommendedShares = Math.floor(maxRiskAmount / riskPerShare);
+                recommendedSharesEl.value = recommendedShares;
+                
+                // Calculate total position size
+                const totalPositionSize = recommendedShares * entryPrice;
+                totalPositionSizeEl.value = totalPositionSize.toFixed(2);
+                
+                // Calculate risk/reward ratio if profit target is provided
+                if (!isNaN(profitTarget) && profitTarget > 0) {
+                    let riskRewardRatio;
+                    
+                    if (tradeType === 'Buy') {
+                        const reward = profitTarget - entryPrice;
+                        riskRewardRatio = reward / riskPerShare;
+                    } else {
+                        const reward = entryPrice - profitTarget;
+                        riskRewardRatio = reward / riskPerShare;
+                    }
+                    
+                    if (riskRewardRatio <= 0) {
+                        riskRewardRatioEl.value = 'Invalid Target';
+                    } else {
+                        // Format to 2 decimal places with "1:" prefix
+                        riskRewardRatioEl.value = "1:" + riskRewardRatio.toFixed(2);
+                    }
+                } else {
+                    riskRewardRatioEl.value = '--';
+                }
+            } else {
+                riskPerShareEl.value = '--';
+                recommendedSharesEl.value = '--';
+                totalPositionSizeEl.value = '--';
+                riskRewardRatioEl.value = '--';
+            }
+            
+            // If trailing stop is enabled, update its info
+            if (trailingStopEl.checked) {
+                updateTrailingStopInfo();
+            }
+        }
+        
+        // Add event listeners to all input fields
+        accountSizeEl.addEventListener('input', calculatePositionSize);
+        riskPercentageEl.addEventListener('input', calculatePositionSize);
+        tradeTypeEl.addEventListener('change', function() {
+            calculateStopLoss();
+            calculatePositionSize();
+        });
+        entryPriceEl.addEventListener('input', function() {
+            calculateStopLoss();
+            calculatePositionSize();
+        });
+        stopLossEl.addEventListener('input', calculatePositionSize);
+        profitTargetEl.addEventListener('input', calculatePositionSize);
+        
+        // Add event listeners for stop loss calculator
+        stopLossTypeEl.addEventListener('change', updateStopLossTypeUI);
+        atrValueEl.addEventListener('input', calculateStopLoss);
+        atrMultipleEl.addEventListener('input', calculateStopLoss);
+        stopLossPercentEl.addEventListener('input', calculateStopLoss);
+        trailingStopEl.addEventListener('change', function() {
+            toggleTrailingStopSettings();
+            calculateStopLoss();
+        });
+        activationPercentEl.addEventListener('input', updateTrailingStopInfo);
+        trailingAmountEl.addEventListener('input', updateTrailingStopInfo);
+        
+        // Initial setup
+        updateStopLossTypeUI();
+        toggleTrailingStopSettings();
+        calculatePositionSize();
+    });
+</script>
+{% endblock %}
