@@ -15,6 +15,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# This line tells Streamlit which requirements file to use
+# st.markdown("<!-- requirements: requirements-streamlit.txt -->")
+
 # Connect to the SQLite database
 DB_PATH = "instance/trading_journal.db"
 
