@@ -1,0 +1,153 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Edit Trade</h1>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Journal</a>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('edit_trade', id=trade.id) }}">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="date" class="form-label">Entry Date</label>
+                                <input type="date" class="form-control" id="date" name="date" value="{{ trade.date.strftime('%Y-%m-%d') }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="exit_date" class="form-label">Exit Date <small class="text-muted">(If trade is closed)</small></label>
+                                <input type="date" class="form-control" id="exit_date" name="exit_date" value="{{ trade.exit_date.strftime('%Y-%m-%d') if trade.exit_date else '' }}">
+                            </div>
+                            <div class="mb-3">
+                                <label for="ticker" class="form-label">Ticker Symbol</label>
+                                <input type="text" class="form-control" id="ticker" name="ticker" value="{{ trade.ticker }}" placeholder="e.g., AAPL" maxlength="10" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="trade_type" class="form-label">Trade Type</label>
+                                <select class="form-select" id="trade_type" name="trade_type" required>
+                                    <option value="Buy" {% if trade.trade_type == 'Buy' %}selected{% endif %}>Buy (Long)</option>
+                                    <option value="Sell" {% if trade.trade_type == 'Sell' %}selected{% endif %}>Sell (Short)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="entry_price" class="form-label">Entry Price</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="entry_price" name="entry_price" step="0.01" min="0.01" value="{{ trade.entry_price }}" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="exit_price" class="form-label">Exit Price <small class="text-muted">(If trade is closed)</small></label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="exit_price" name="exit_price" step="0.01" min="0.01" value="{{ trade.exit_price or '' }}">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="shares" class="form-label">Number of Shares</label>
+                                <input type="number" class="form-control" id="shares" name="shares" min="1" value="{{ trade.shares }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="stop_loss" class="form-label">Stop Loss Price</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="stop_loss" name="stop_loss" step="0.01" min="0.01" value="{{ trade.stop_loss or '' }}">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="holding_period" class="form-label">Holding Period (Days)</label>
+                                <input type="number" class="form-control" id="holding_period" name="holding_period" min="1" value="{{ trade.holding_period or '' }}" readonly>
+                                <small class="text-muted">Calculated automatically from entry and exit dates</small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="entry_emotion" class="form-label">Emotional State at Entry</label>
+                                <select class="form-select" id="entry_emotion" name="entry_emotion">
+                                    <option value="">Select emotional state...</option>
+                                    {% for emotion in ['confident', 'cautious', 'fearful', 'greedy', 'fomo', 'regretful', 'impulsive', 'patient', 'anxious', 'excited', 'indifferent', 'hopeful'] %}
+                                        <option value="{{ emotion }}" {% if trade.entry_emotion == emotion %}selected{% endif %}>{{ emotion|capitalize }}</option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted">How were you feeling when you entered this trade?</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="exit_emotion" class="form-label">Emotional State at Exit</label>
+                                <select class="form-select" id="exit_emotion" name="exit_emotion">
+                                    <option value="">Select emotional state...</option>
+                                    {% for emotion in ['confident', 'cautious', 'fearful', 'greedy', 'fomo', 'regretful', 'impulsive', 'patient', 'anxious', 'excited', 'indifferent', 'hopeful'] %}
+                                        <option value="{{ emotion }}" {% if trade.exit_emotion == emotion %}selected{% endif %}>{{ emotion|capitalize }}</option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted">How were you feeling when you exited (or plan to exit) this trade?</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="entry_reason" class="form-label">Entry Reason</label>
+                                <textarea class="form-control" id="entry_reason" name="entry_reason" rows="3" placeholder="Why did you enter this trade? What setup or pattern did you see?">{{ trade.entry_reason or '' }}</textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="exit_reason" class="form-label">Exit Reason</label>
+                                <textarea class="form-control" id="exit_reason" name="exit_reason" rows="3" placeholder="Why did you exit this trade? Was it according to plan?">{{ trade.exit_reason or '' }}</textarea>
+                            </div>
+                            
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="followed_plan" name="followed_plan" value="true" {% if trade.followed_plan %}checked{% endif %}>
+                                <label class="form-check-label" for="followed_plan">I followed my trading plan for this trade</label>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="notes" class="form-label">Notes & Observations</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="5" placeholder="Additional notes, lessons learned, or observations...">{{ trade.notes or '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary me-md-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Update Trade</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Handle date calculations and ticker search
+    document.addEventListener('DOMContentLoaded', function() {
+        const entryDateEl = document.getElementById('date');
+        const exitDateEl = document.getElementById('exit_date');
+        const holdingPeriodEl = document.getElementById('holding_period');
+        
+        // Function to calculate holding period
+        function calculateHoldingPeriod() {
+            const entryDate = new Date(entryDateEl.value);
+            const exitDate = new Date(exitDateEl.value);
+            
+            if (entryDateEl.value && exitDateEl.value) {
+                // Calculate the difference in days
+                const diffTime = Math.abs(exitDate - entryDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                holdingPeriodEl.value = diffDays;
+            } else {
+                holdingPeriodEl.value = '';
+            }
+        }
+        
+        
+        // Add event listeners
+        entryDateEl.addEventListener('change', calculateHoldingPeriod);
+        exitDateEl.addEventListener('change', calculateHoldingPeriod);
+        
+        // Calculate holding period on page load
+        calculateHoldingPeriod();
+    });
+</script>
+{% endblock %}

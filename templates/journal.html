@@ -1,0 +1,304 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Trading Journal</h1>
+            <a href="{{ url_for('add_trade') }}" class="btn btn-primary">Add New Trade</a>
+        </div>
+        
+        {% if trades %}
+        <div class="mb-4">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <strong>Sort Trades</strong>
+                            <span class="text-muted small">Click an icon to sort</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="sort-controls">
+                                <!-- Date Sort -->
+                                <div class="sort-group">
+                                    <div class="sort-label">Date</div>
+                                    <div class="sort-icons">
+                                        <a href="{{ url_for('journal', sort_by='date_desc', search_ticker=request.args.get('search_ticker', ''), filter=request.args.get('filter', '')) }}" class="sort-icon-btn {% if sort_by == 'date_desc' %}active{% endif %}" data-bs-toggle="tooltip" title="Newest First">
+                                            <i class="fas fa-sort-numeric-down-alt"></i>
+                                        </a>
+                                        <a href="{{ url_for('journal', sort_by='date_asc', search_ticker=request.args.get('search_ticker', ''), filter=request.args.get('filter', '')) }}" class="sort-icon-btn {% if sort_by == 'date_asc' %}active{% endif %}" data-bs-toggle="tooltip" title="Oldest First">
+                                            <i class="fas fa-sort-numeric-up"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                
+                                <!-- Profit Sort -->
+                                <div class="sort-group">
+                                    <div class="sort-label">Profit</div>
+                                    <div class="sort-icons">
+                                        <a href="{{ url_for('journal', sort_by='profit_desc', search_ticker=request.args.get('search_ticker', ''), filter=request.args.get('filter', '')) }}" class="sort-icon-btn {% if sort_by == 'profit_desc' %}active{% endif %}" data-bs-toggle="tooltip" title="Most Profitable">
+                                            <i class="fas fa-dollar-sign"></i><i class="fas fa-arrow-up ms-1 small"></i>
+                                        </a>
+                                        <a href="{{ url_for('journal', sort_by='profit_asc', search_ticker=request.args.get('search_ticker', ''), filter=request.args.get('filter', '')) }}" class="sort-icon-btn {% if sort_by == 'profit_asc' %}active{% endif %}" data-bs-toggle="tooltip" title="Least Profitable">
+                                            <i class="fas fa-dollar-sign"></i><i class="fas fa-arrow-down ms-1 small"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                
+                                <!-- Ticker Sort -->
+                                <div class="sort-group">
+                                    <div class="sort-label">Ticker</div>
+                                    <div class="sort-icons">
+                                        <a href="{{ url_for('journal', sort_by='ticker_asc', search_ticker=request.args.get('search_ticker', ''), filter=request.args.get('filter', '')) }}" class="sort-icon-btn {% if sort_by == 'ticker_asc' %}active{% endif %}" data-bs-toggle="tooltip" title="A to Z">
+                                            <i class="fas fa-sort-alpha-down"></i>
+                                        </a>
+                                        <a href="{{ url_for('journal', sort_by='ticker_desc', search_ticker=request.args.get('search_ticker', ''), filter=request.args.get('filter', '')) }}" class="sort-icon-btn {% if sort_by == 'ticker_desc' %}active{% endif %}" data-bs-toggle="tooltip" title="Z to A">
+                                            <i class="fas fa-sort-alpha-up-alt"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                
+                                <!-- Duration Sort -->
+                                <div class="sort-group">
+                                    <div class="sort-label">Duration</div>
+                                    <div class="sort-icons">
+                                        <a href="{{ url_for('journal', sort_by='holding_desc', search_ticker=request.args.get('search_ticker', ''), filter=request.args.get('filter', '')) }}" class="sort-icon-btn {% if sort_by == 'holding_desc' %}active{% endif %}" data-bs-toggle="tooltip" title="Longest Duration">
+                                            <i class="fas fa-calendar-day"></i><i class="fas fa-plus ms-1 small"></i>
+                                        </a>
+                                        <a href="{{ url_for('journal', sort_by='holding_asc', search_ticker=request.args.get('search_ticker', ''), filter=request.args.get('filter', '')) }}" class="sort-icon-btn {% if sort_by == 'holding_asc' %}active{% endif %}" data-bs-toggle="tooltip" title="Shortest Duration">
+                                            <i class="fas fa-calendar-day"></i><i class="fas fa-minus ms-1 small"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <strong>Trade Statistics</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <p><strong>Total Trades:</strong> {{ trades|length }}</p>
+                                    <p><strong>Open Trades:</strong> {{ trades|selectattr('exit_price', 'none')|list|length }}</p>
+                                </div>
+                                <div class="col-6">
+                                    {% set profitable_trades = trades|selectattr('pl_amount')|selectattr('pl_amount', 'gt', 0)|list|length %}
+                                    {% set closed_trades = trades|selectattr('pl_amount')|list|length %}
+                                    {% set win_rate = (profitable_trades / closed_trades * 100)|round(1) if closed_trades > 0 else 0 %}
+                                    
+                                    <p><strong>Win Rate:</strong> <span class="{% if win_rate >= 50 %}profit{% else %}loss{% endif %}">{{ win_rate }}%</span></p>
+                                    <p><strong>Closed Trades:</strong> {{ closed_trades }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Ticker Search -->
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <strong>Search by Ticker</strong>
+                        </div>
+                        <div class="card-body">
+                            <form method="GET" action="{{ url_for('journal') }}" class="d-flex">
+                                <input type="text" name="search_ticker" id="search_ticker" class="form-control me-2" placeholder="Enter ticker symbol..." value="{{ request.args.get('search_ticker', '') }}">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search"></i> Search
+                                </button>
+                                {% if request.args.get('search_ticker') %}
+                                <a href="{{ url_for('journal') }}" class="btn btn-outline-secondary ms-2">
+                                    <i class="fas fa-times"></i> Clear
+                                </a>
+                                {% endif %}
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <strong>Quick Actions</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <a href="{{ url_for('journal', filter='open', search_ticker=request.args.get('search_ticker', ''), sort_by=sort_by) }}" class="btn btn-outline-primary {% if request.args.get('filter') == 'open' %}active{% endif %}">
+                                    <i class="fas fa-clock"></i> Open Trades
+                                </a>
+                                <a href="{{ url_for('journal', filter='profitable', search_ticker=request.args.get('search_ticker', ''), sort_by=sort_by) }}" class="btn btn-outline-success {% if request.args.get('filter') == 'profitable' %}active{% endif %}">
+                                    <i class="fas fa-chart-line"></i> Profitable
+                                </a>
+                                <a href="{{ url_for('journal', filter='losing', search_ticker=request.args.get('search_ticker', ''), sort_by=sort_by) }}" class="btn btn-outline-danger {% if request.args.get('filter') == 'losing' %}active{% endif %}">
+                                    <i class="fas fa-chart-line fa-flip-vertical"></i> Losing
+                                </a>
+                                {% if request.args.get('filter') %}
+                                <a href="{{ url_for('journal', search_ticker=request.args.get('search_ticker', ''), sort_by=sort_by) }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times"></i> Clear Filter
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% if request.args.get('search_ticker') or request.args.get('filter') %}
+        <div class="alert alert-info mb-3">
+            {% if request.args.get('search_ticker') %}
+            <span><strong>Showing trades for ticker:</strong> {{ request.args.get('search_ticker').upper() }}</span>
+            {% endif %}
+            
+            {% if request.args.get('filter') %}
+            <span>
+                <strong>Filter applied:</strong>
+                {% if request.args.get('filter') == 'open' %}Open Trades
+                {% elif request.args.get('filter') == 'profitable' %}Profitable Trades
+                {% elif request.args.get('filter') == 'losing' %}Losing Trades
+                {% endif %}
+            </span>
+            {% endif %}
+            
+            <span class="float-end">
+                <strong>{{ trades|length }}</strong> trade{% if trades|length != 1 %}s{% endif %} found
+            </span>
+        </div>
+        {% endif %}
+
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Entry Date</th>
+                        <th>Ticker</th>
+                        <th>Type</th>
+                        <th>Entry</th>
+                        <th>Exit</th>
+                        <th>Shares</th>
+                        <th>P/L</th>
+                        <th>P/L %</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trade in trades %}
+                        <tr>
+                            <td>{{ trade.date.strftime('%Y-%m-%d') }}</td>
+                            <td><strong>{{ trade.ticker }}</strong></td>
+                            <td>{{ trade.trade_type }}</td>
+                            <td>${{ '%.2f'|format(trade.entry_price) }}</td>
+                            <td>{% if trade.exit_price %}${{ '%.2f'|format(trade.exit_price) }}{% else %}--{% endif %}</td>
+                            <td>{{ trade.shares }}</td>
+                            <td class="{% if trade.pl_amount and trade.pl_amount > 0 %}profit{% elif trade.pl_amount and trade.pl_amount < 0 %}loss{% endif %}">
+                                {% if trade.pl_amount %}${{ '%.2f'|format(trade.pl_amount) }}{% else %}--{% endif %}
+                            </td>
+                            <td class="{% if trade.pl_percent and trade.pl_percent > 0 %}profit{% elif trade.pl_percent and trade.pl_percent < 0 %}loss{% endif %}">
+                                {% if trade.pl_percent %}{{ '%.2f'|format(trade.pl_percent) }}%{% else %}--{% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-sm btn-icon btn-outline-info" data-bs-toggle="modal" data-bs-target="#tradeModal{{ trade.id }}" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <a href="{{ url_for('edit_trade', id=trade.id) }}" class="btn btn-sm btn-icon btn-outline-primary" title="Edit Trade">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{{ url_for('delete_trade', id=trade.id) }}" class="btn btn-sm btn-icon btn-outline-danger" onclick="return confirm('Are you sure you want to delete this trade?')" title="Delete Trade">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if trades|length == 0 %}
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i> No trades match the current search/filter criteria.
+        </div>
+        {% endif %}
+
+        {% for trade in trades %}
+            <!-- Modal for each trade -->
+            <div class="modal fade" id="tradeModal{{ trade.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">{{ trade.ticker }} - {{ trade.trade_type }} Trade Details</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Entry Date:</strong> {{ trade.date.strftime('%Y-%m-%d') }}</p>
+                                    <p><strong>Exit Date:</strong> {% if trade.exit_date %}{{ trade.exit_date.strftime('%Y-%m-%d') }}{% else %}--{% endif %}</p>
+                                    <p><strong>Ticker:</strong> {{ trade.ticker }}</p>
+                                    <p><strong>Trade Type:</strong> {{ trade.trade_type }}</p>
+                                    <p><strong>Entry Price:</strong> ${{ '%.2f'|format(trade.entry_price) }}</p>
+                                    <p><strong>Exit Price:</strong> {% if trade.exit_price %}${{ '%.2f'|format(trade.exit_price) }}{% else %}--{% endif %}</p>
+                                    <p><strong>Shares:</strong> {{ trade.shares }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Holding Period:</strong> {% if trade.holding_period %}{{ trade.holding_period }} days{% else %}--{% endif %}</p>
+                                    <p><strong>Stop Loss:</strong> {% if trade.stop_loss %}${{ '%.2f'|format(trade.stop_loss) }}{% else %}--{% endif %}</p>
+                                    <p><strong>P/L Amount:</strong> 
+                                        <span class="{% if trade.pl_amount and trade.pl_amount > 0 %}profit{% elif trade.pl_amount and trade.pl_amount < 0 %}loss{% endif %}">
+                                            {% if trade.pl_amount %}${{ '%.2f'|format(trade.pl_amount) }}{% else %}--{% endif %}
+                                        </span>
+                                    </p>
+                                    <p><strong>P/L Percent:</strong> 
+                                        <span class="{% if trade.pl_percent and trade.pl_percent > 0 %}profit{% elif trade.pl_percent and trade.pl_percent < 0 %}loss{% endif %}">
+                                            {% if trade.pl_percent %}{{ '%.2f'|format(trade.pl_percent) }}%{% else %}--{% endif %}
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header bg-light">
+                                            <strong>Notes & Observations</strong>
+                                        </div>
+                                        <div class="card-body">
+                                            {{ trade.notes or 'Not provided' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <a href="{{ url_for('edit_trade', id=trade.id) }}" class="btn btn-primary">Edit</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+        {% else %}
+            <div class="alert alert-info">
+                <h4 class="alert-heading">No trades recorded yet!</h4>
+                <p>Get started by adding your first trade using the "Add New Trade" button above.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+</script>
+{% endblock %}

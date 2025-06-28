@@ -1,0 +1,298 @@
+{% extends "layout.html" %}
+
+{# Define some helper macros to safely handle potential None values #}
+{% macro is_profitable(value) -%}
+    {{ value is defined and value is not none and value >= 0 }}
+{%- endmacro %}
+
+{% macro format_currency(value) -%}
+    ${{ '%.2f'|format(value if value is not none else 0) }}
+{%- endmacro %}
+
+{% macro format_percent(value) -%}
+    {{ '%.1f'|format(value if value is not none else 0) }}%
+{%- endmacro %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1><i class="fas fa-calendar-alt me-2"></i>Trade Calendar</h1>
+            <div class="month-navigation">
+                <a href="{{ url_for('calendar', month=prev_month[0], year=prev_month[1]) }}" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-chevron-left"></i> Previous Month
+                </a>
+                <span class="h5 mb-0 mx-3">{{ month_name }} {{ current_year }}</span>
+                <a href="{{ url_for('calendar', month=next_month[0], year=next_month[1]) }}" class="btn btn-outline-primary ms-2">
+                    Next Month <i class="fas fa-chevron-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="calendar-container">
+            <div class="calendar-grid">
+                <!-- Day names header -->
+                <div class="calendar-day-name">Sunday</div>
+                <div class="calendar-day-name">Monday</div>
+                <div class="calendar-day-name">Tuesday</div>
+                <div class="calendar-day-name">Wednesday</div>
+                <div class="calendar-day-name">Thursday</div>
+                <div class="calendar-day-name">Friday</div>
+                <div class="calendar-day-name">Saturday</div>
+                
+                <!-- Empty cells for days before the 1st of month -->
+                {% for _ in range(first_day_of_month_weekday) %}
+                    <div class="calendar-day empty"></div>
+                {% endfor %}
+                
+                <!-- Calendar days -->
+                {% for day in range(1, days_in_month + 1) %}
+                    {% set current_date = '%04d-%02d-%02d'|format(current_year, current_month, day) %}
+                    {% set today_date = now.strftime('%Y-%m-%d') %}
+                    {% set day_trades = trades_by_day.get(current_date, []) %}
+                    
+                    <div class="calendar-day {% if day_trades %}has-trades{% endif %} {% if current_date == today_date %}today{% endif %}" 
+                         data-bs-toggle="modal" 
+                         data-bs-target="#dayModal{{ day }}">
+                        <div class="date">{{ day }}</div>
+                        
+                        {% if day_trades %}
+                            {% set profit_count = day_trades|selectattr('pl_amount', 'defined')|selectattr('pl_amount', 'ge', 0)|list|length %}
+                            {% set loss_count = day_trades|selectattr('pl_amount', 'defined')|selectattr('pl_amount', 'lt', 0)|list|length %}
+                            
+                            <div class="trades">
+                                {% if profit_count > 0 %}
+                                    <span class="badge bg-success">{{ profit_count }}</span>
+                                {% endif %}
+                                
+                                {% if loss_count > 0 %}
+                                    <span class="badge bg-danger">{{ loss_count }}</span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Modal for each day with trades -->
+                    {% if day_trades %}
+                        <div class="modal fade" id="dayModal{{ day }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Trades on {{ month_name }} {{ day }}, {{ current_year }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-striped table-hover">
+                                                <thead class="table-dark">
+                                                    <tr>
+                                                        <th>Ticker</th>
+                                                        <th>Type</th>
+                                                        <th>Entry</th>
+                                                        <th>Exit</th>
+                                                        <th>Shares</th>
+                                                        <th>P/L</th>
+                                                        <th>P/L %</th>
+                                                        <th>Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for trade in day_trades %}
+                                                        <tr>
+                                                            <td><strong>{{ trade.ticker }}</strong></td>
+                                                            <td>{{ trade.trade_type }}</td>
+                                                            <td>${{ '%.2f'|format(trade.entry_price) }}</td>
+                                                            <td>{% if trade.exit_price %}${{ '%.2f'|format(trade.exit_price) }}{% else %}--{% endif %}</td>
+                                                            <td>{{ trade.shares }}</td>
+                                                            <td class="{% if trade.pl_amount and trade.pl_amount > 0 %}profit{% elif trade.pl_amount and trade.pl_amount < 0 %}loss{% endif %}">
+                                                                {% if trade.pl_amount %}${{ '%.2f'|format(trade.pl_amount) }}{% else %}--{% endif %}
+                                                            </td>
+                                                            <td class="{% if trade.pl_percent and trade.pl_percent > 0 %}profit{% elif trade.pl_percent and trade.pl_percent < 0 %}loss{% endif %}">
+                                                                {% if trade.pl_percent %}{{ '%.2f'|format(trade.pl_percent) }}%{% else %}--{% endif %}
+                                                            </td>
+                                                            <td>
+                                                                <div class="btn-group btn-group-sm" role="group">
+                                                                    <a href="{{ url_for('edit_trade', id=trade.id) }}" class="btn btn-outline-primary">Edit</a>
+                                                                    <a href="{{ url_for('delete_trade', id=trade.id) }}" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to delete this trade?')">Delete</a>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        
+                                        <div class="day-summary mt-4">
+                                            <h6>Day Summary</h6>
+                                            <div class="row">
+                                                <div class="col-md-3">
+                                                    <div class="card">
+                                                        <div class="card-body text-center">
+                                                            <div class="text-muted mb-1">Trades</div>
+                                                            <div class="h4">{{ day_trades|length }}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="card">
+                                                        <div class="card-body text-center">
+                                                            <div class="text-muted mb-1">Win/Loss</div>
+                                                            <div class="h4">{{ profit_count }}/{{ loss_count }}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="card">
+                                                        <div class="card-body text-center">
+                                                            <div class="text-muted mb-1">Total P/L</div>
+                                                            {% set total_day_pl = day_trades|selectattr('pl_amount', 'defined')|sum(attribute='pl_amount')|default(0) %}
+                                                            <div class="h4 {% if is_profitable(total_day_pl) %}profit{% else %}loss{% endif %}">
+                                                                {{ format_currency(total_day_pl) }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="card">
+                                                        <div class="card-body text-center">
+                                                            <div class="text-muted mb-1">Win Rate</div>
+                                                            {% if day_trades|length > 0 %}
+                                                                {% set win_rate = (profit_count / day_trades|length * 100)|round(1) %}
+                                                                <div class="h4 {% if is_profitable(win_rate) and win_rate >= 50 %}profit{% else %}loss{% endif %}">
+                                                                    {{ format_percent(win_rate) }}
+                                                                </div>
+                                                            {% else %}
+                                                                <div class="h4">--</div>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Monthly Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <p class="mb-1"><strong>Total Trades:</strong></p>
+                        <h4>{{ monthly_stats.total_trades }}</h4>
+                    </div>
+                    <div class="col-6">
+                        <p class="mb-1"><strong>Trading Days:</strong></p>
+                        <h4>{{ monthly_stats.trading_days }}</h4>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-6">
+                        <p class="mb-1"><strong>Win Rate:</strong></p>
+                        <h4 class="{% if is_profitable(monthly_stats.win_rate) and monthly_stats.win_rate >= 50 %}profit{% else %}loss{% endif %}">
+                            {{ format_percent(monthly_stats.win_rate) }}
+                        </h4>
+                    </div>
+                    <div class="col-6">
+                        <p class="mb-1"><strong>Win/Loss:</strong></p>
+                        <h4>{{ monthly_stats.wins }}/{{ monthly_stats.losses }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Monthly Performance</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Total P/L:</strong></p>
+                        <h3 class="{% if is_profitable(monthly_stats.total_pl) %}profit{% else %}loss{% endif %}">
+                            {{ format_currency(monthly_stats.total_pl) }}
+                        </h3>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Avg. P/L per Trade:</strong></p>
+                        <h3 class="{% if is_profitable(monthly_stats.avg_pl) %}profit{% else %}loss{% endif %}">
+                            {{ format_currency(monthly_stats.avg_pl) }}
+                        </h3>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <canvas id="monthlyPerformanceChart" height="180"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Monthly performance chart
+        const mpCtx = document.getElementById('monthlyPerformanceChart').getContext('2d');
+        
+        const dates = {{ monthly_stats.chart_dates|tojson }};
+        const values = {{ monthly_stats.chart_values|tojson }};
+        
+        const monthlyChart = new Chart(mpCtx, {
+            type: 'bar',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Daily P/L ($)',
+                    data: values,
+                    backgroundColor: values.map(v => (v !== null && v !== undefined && v >= 0) ? 'rgba(40, 167, 69, 0.7)' : 'rgba(220, 53, 69, 0.7)'),
+                    borderColor: values.map(v => (v !== null && v !== undefined && v >= 0) ? 'rgba(40, 167, 69, 1)' : 'rgba(220, 53, 69, 1)'),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

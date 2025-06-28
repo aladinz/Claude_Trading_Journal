@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./update_psychology.sh)",
+      "Bash(git add:*)",
+      "Bash(grep:*)",
+      "Bash(mkdir:*)"
+    ],
+    "deny": []
+  }
+}
