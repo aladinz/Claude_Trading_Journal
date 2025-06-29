@@ -1,11 +1,10 @@
 [server]
-port = 5185
+port = 8501
 headless = true
 enableCORS = false
-enableXsrfProtection = true
+enableXsrfProtection = false
 
 [browser]
-serverAddress = "localhost"
 gatherUsageStats = false
 
 [theme]
@@ -14,6 +13,3 @@ backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#F0F2F6"
 textColor = "#262730"
 font = "sans serif"
-
-[logger]
-level = "info"

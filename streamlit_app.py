@@ -183,13 +183,23 @@ def populate_sample_data(cursor):
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', sample_trades)
 
-# Get database path
-DB_PATH = get_database_path()
+# Get database path and initialize database
+@st.cache_resource
+def get_database():
+    """Get database path and initialize if needed"""
+    db_path = get_database_path()
+    
+    if not os.path.exists(db_path):
+        try:
+            initialize_database(db_path)
+        except Exception as e:
+            st.error(f"Database initialization failed: {e}")
+            # Return in-memory database as fallback
+            return ":memory:"
+    
+    return db_path
 
-# Initialize database if it doesn't exist
-if not os.path.exists(DB_PATH):
-    st.info("🚀 Initializing database with sample trading data...")
-    initialize_database(DB_PATH)
+DB_PATH = get_database()
 
 def get_db_connection():
     try:
@@ -241,14 +251,36 @@ def load_trades():
 st.sidebar.title("Trading Journal")
 page = st.sidebar.selectbox("Navigate", ["Dashboard", "Trade Journal", "Analytics", "Position Calculator"])
 
-# Load data
+# Load data with error handling
+@st.cache_data
+def get_trades_data():
+    """Load trades data with caching and error handling"""
+    try:
+        return load_trades()
+    except Exception as e:
+        st.error(f"Error loading data: {e}")
+        # Return sample data as fallback
+        return pd.DataFrame({
+            'date': pd.date_range(start='2025-01-01', periods=5),
+            'ticker': ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'],
+            'symbol': ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'],
+            'direction': ['Long', 'Short', 'Long', 'Long', 'Short'],
+            'entry_price': [150.25, 350.75, 2800.50, 3200.00, 900.50],
+            'exit_price': [155.50, 340.25, 2850.75, 3300.00, 850.25],
+            'quantity': [10, 5, 2, 3, 15],
+            'pnl': [52.50, -52.50, 100.50, 300.00, -753.75],
+            'strategy': ['Swing', 'Day Trade', 'Swing', 'Position', 'Day Trade'],
+            'id': [1, 2, 3, 4, 5]
+        })
+
 try:
-    trades_df = load_trades()
-    if len(trades_df) == 0:
-        st.warning("No trades found in the database. Add some trades to get started.")
+    trades_df = get_trades_data()
     has_data = len(trades_df) > 0
+    
+    if not has_data:
+        st.info("No trades found. Using sample data for demonstration.")
 except Exception as e:
-    st.error(f"Error loading data: {e}")
+    st.error(f"Critical error: {e}")
     has_data = False
     trades_df = pd.DataFrame()
 
