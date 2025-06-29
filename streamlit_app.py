@@ -15,29 +15,79 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# This line tells Streamlit which requirements file to use
-# st.markdown("<!-- requirements: requirements-streamlit.txt -->")
-
 # Connect to the SQLite database
-DB_PATH = "instance/trading_journal.db"
+# Use different paths for local development vs Streamlit Cloud
+if os.path.exists("instance/trading_journal.db"):
+    DB_PATH = "instance/trading_journal.db"
+elif os.path.exists("./instance/trading_journal.db"):  
+    DB_PATH = "./instance/trading_journal.db"
+else:
+    # Create a fallback in-memory database for demo purposes when deployed
+    DB_PATH = ":memory:"
+    st.warning("Running in demo mode: Using in-memory database. Your data will not be saved.")
 
 def get_db_connection():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        return conn
+    except Exception as e:
+        st.error(f"Database connection error: {e}")
+        return None
 
 # Function to load trades from database
 def load_trades():
     conn = get_db_connection()
-    query = "SELECT * FROM trades ORDER BY date DESC"
-    trades_df = pd.read_sql_query(query, conn)
-    conn.close()
+    if conn is None:
+        # Return empty DataFrame if connection failed
+        st.error("Unable to connect to database. Using sample data.")
+        # Create sample data for demo purposes
+        sample_data = {
+            'date': pd.date_range(start='2025-01-01', periods=5),
+            'symbol': ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'],
+            'direction': ['Long', 'Short', 'Long', 'Long', 'Short'],
+            'entry_price': [150.25, 350.75, 2800.50, 3200.00, 900.50],
+            'exit_price': [155.50, 340.25, 2850.75, 3300.00, 850.25],
+            'quantity': [10, 5, 2, 3, 15],
+            'profit_loss': [52.50, 52.50, 100.50, 300.00, 753.75]
+        }
+        return pd.DataFrame(sample_data)
     
-    # Convert date string to datetime object
-    if 'date' in trades_df.columns:
-        trades_df['date'] = pd.to_datetime(trades_df['date'])
+    try:
+        # First check if the trades table exists
+        check_query = "SELECT name FROM sqlite_master WHERE type='table' AND name='trades'"
+        tables = pd.read_sql_query(check_query, conn)
         
-    return trades_df
+        if len(tables) == 0:
+            # Table doesn't exist, return empty DataFrame with sample data
+            conn.close()
+            st.info("No trades table found. Using sample data for demonstration.")
+            # Create sample data structure
+            sample_data = {
+                'date': pd.date_range(start='2025-01-01', periods=5),
+                'symbol': ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'],
+                'direction': ['Long', 'Short', 'Long', 'Long', 'Short'],
+                'entry_price': [150.25, 350.75, 2800.50, 3200.00, 900.50],
+                'exit_price': [155.50, 340.25, 2850.75, 3300.00, 850.25],
+                'quantity': [10, 5, 2, 3, 15],
+                'profit_loss': [52.50, 52.50, 100.50, 300.00, 753.75]
+            }
+            return pd.DataFrame(sample_data)
+        
+        # Table exists, get the data
+        query = "SELECT * FROM trades ORDER BY date DESC"
+        trades_df = pd.read_sql_query(query, conn)
+        conn.close()
+        
+        # Convert date string to datetime object
+        if 'date' in trades_df.columns:
+            trades_df['date'] = pd.to_datetime(trades_df['date'])
+        
+        return trades_df
+    except Exception as e:
+        st.error(f"Error loading trades data: {e}")
+        # Return empty DataFrame with appropriate structure
+        return pd.DataFrame(columns=['date', 'symbol', 'direction', 'entry_price', 'exit_price', 'quantity', 'profit_loss'])
 
 # Sidebar navigation
 st.sidebar.title("Trading Journal")
