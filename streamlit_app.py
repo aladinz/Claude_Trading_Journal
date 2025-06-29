@@ -4,8 +4,6 @@ import plotly.express as px
 from datetime import datetime, timedelta
 import os
 import sqlite3
-import calendar as cal
-from collections import defaultdict
 import random
 
 # Set page config

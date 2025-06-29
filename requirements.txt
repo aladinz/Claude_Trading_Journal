@@ -1,8 +1,3 @@
-# Core dependencies - compatible versions for Streamlit Cloud
-streamlit==1.28.0
-pandas==1.5.3
-numpy==1.24.3
-
-# Visualization
-plotly==5.15.0
-altair==4.2.2
+streamlit
+pandas
+plotly
