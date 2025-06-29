@@ -91,6 +91,22 @@ A sophisticated web-based personal swing trading journal application built with 
    ```
 6. Open your browser and go to `http://127.0.0.1:5000/`
 
+### Streamlit Version
+
+A simplified Streamlit version is also available:
+
+```bash
+# Run Streamlit version locally on port 8504
+./run_streamlit.sh
+
+# Or manually
+venv/Scripts/python.exe -m streamlit run streamlit_app.py --server.port 8504
+```
+
+- **Streamlit Cloud**: Automatically deployed
+- **Local Streamlit**: http://localhost:8504
+- **Files**: `streamlit_app.py` (minimal), `streamlit_app_backup.py` (full-featured)
+
 ### Vercel Deployment
 
 This application is configured for deployment on Vercel's serverless platform.
