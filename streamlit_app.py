@@ -51,7 +51,9 @@ def load_trades():
             'exit_price': [155.50, 340.25, 2850.75, 3300.00, 850.25],
             'quantity': [10, 5, 2, 3, 15],
             'profit_loss': [52.50, 52.50, 100.50, 300.00, 753.75],
-            'pnl': [52.50, -52.50, 100.50, 300.00, -753.75]
+            'pnl': [52.50, -52.50, 100.50, 300.00, -753.75],
+            'strategy': ['Swing', 'Day Trade', 'Swing', 'Position', 'Day Trade'],
+            'id': [1, 2, 3, 4, 5]
         }
         return pd.DataFrame(sample_data)
     
@@ -74,7 +76,9 @@ def load_trades():
                 'exit_price': [155.50, 340.25, 2850.75, 3300.00, 850.25],
                 'quantity': [10, 5, 2, 3, 15],
                 'profit_loss': [52.50, 52.50, 100.50, 300.00, 753.75],
-                'pnl': [52.50, -52.50, 100.50, 300.00, -753.75]
+                'pnl': [52.50, -52.50, 100.50, 300.00, -753.75],
+                'strategy': ['Swing', 'Day Trade', 'Swing', 'Position', 'Day Trade'],
+                'id': [1, 2, 3, 4, 5]
             }
             return pd.DataFrame(sample_data)
         
