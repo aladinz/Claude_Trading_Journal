@@ -22,7 +22,12 @@ var/
 
 # Virtual Environment
 venv/
+venv_old/
+flask_venv/
+.venv/
 ENV/
+virtualenv/
+*env/
 
 # SQLite database
 *.db
@@ -47,4 +52,9 @@ instance/
 # OS specific files
 .DS_Store
 Thumbs.db
-.vercel
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log

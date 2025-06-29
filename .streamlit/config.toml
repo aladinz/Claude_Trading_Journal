@@ -1,0 +1,13 @@
+[server]
+# Port will only be used in development, deployment platforms often override this
+port = 8501
+enableCORS = false
+enableXsrfProtection = true
+headless = true
+
+[theme]
+primaryColor="#F63366"
+backgroundColor="#FFFFFF"
+secondaryBackgroundColor="#F0F2F6"
+textColor="#262730"
+font="sans serif"
