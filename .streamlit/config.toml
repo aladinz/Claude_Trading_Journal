@@ -1,10 +1,11 @@
 [server]
-port = 8501
-headless = true
-enableCORS = false
+port = 8504
+headless = false
+enableCORS = true
 enableXsrfProtection = false
 
 [browser]
+serverAddress = "localhost"
 gatherUsageStats = false
 
 [theme]
