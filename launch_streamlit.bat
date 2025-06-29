@@ -32,6 +32,6 @@ if exist "venv\Scripts\activate.bat" (
 :: Activate the virtual environment and run the app
 echo Activating virtual environment and starting Streamlit...
 call venv\Scripts\activate.bat
-venv\Scripts\python.exe -m streamlit run streamlit_app.py --server.port=5000
+venv\Scripts\python.exe -m streamlit run streamlit_app.py --server.port=5185
 
 pause

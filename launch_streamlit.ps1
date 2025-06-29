@@ -2,7 +2,7 @@
 
 # CONFIGURATION
 $APP_DIR = "C:\Users\aladi\ClaudeProjects\trading_journal"
-$APP_PORT = 5000  # Custom Streamlit port
+$APP_PORT = 5185  # Custom Streamlit port
 
 # Step 1: Go to project directory
 Write-Host "📂 Navigating to project folder..." -ForegroundColor Cyan
