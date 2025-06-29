@@ -22,7 +22,12 @@ var/
 
 # Virtual Environment
 venv/
+venv_old/
+flask_venv/
+.venv/
 ENV/
+virtualenv/
+*env/
 
 # SQLite database
 *.db
