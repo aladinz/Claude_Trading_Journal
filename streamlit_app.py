@@ -44,12 +44,14 @@ def load_trades():
         # Create sample data for demo purposes
         sample_data = {
             'date': pd.date_range(start='2025-01-01', periods=5),
+            'ticker': ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'],
             'symbol': ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'],
             'direction': ['Long', 'Short', 'Long', 'Long', 'Short'],
             'entry_price': [150.25, 350.75, 2800.50, 3200.00, 900.50],
             'exit_price': [155.50, 340.25, 2850.75, 3300.00, 850.25],
             'quantity': [10, 5, 2, 3, 15],
-            'profit_loss': [52.50, 52.50, 100.50, 300.00, 753.75]
+            'profit_loss': [52.50, 52.50, 100.50, 300.00, 753.75],
+            'pnl': [52.50, -52.50, 100.50, 300.00, -753.75]
         }
         return pd.DataFrame(sample_data)
     
@@ -65,12 +67,14 @@ def load_trades():
             # Create sample data structure
             sample_data = {
                 'date': pd.date_range(start='2025-01-01', periods=5),
+                'ticker': ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'],
                 'symbol': ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'],
                 'direction': ['Long', 'Short', 'Long', 'Long', 'Short'],
                 'entry_price': [150.25, 350.75, 2800.50, 3200.00, 900.50],
                 'exit_price': [155.50, 340.25, 2850.75, 3300.00, 850.25],
                 'quantity': [10, 5, 2, 3, 15],
-                'profit_loss': [52.50, 52.50, 100.50, 300.00, 753.75]
+                'profit_loss': [52.50, 52.50, 100.50, 300.00, 753.75],
+                'pnl': [52.50, -52.50, 100.50, 300.00, -753.75]
             }
             return pd.DataFrame(sample_data)
         
