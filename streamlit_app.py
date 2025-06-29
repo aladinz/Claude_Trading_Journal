@@ -6,6 +6,7 @@ import os
 import sqlite3
 import calendar as cal
 from collections import defaultdict
+import random
 
 # Set page config
 st.set_page_config(
@@ -17,14 +18,171 @@ st.set_page_config(
 
 # Connect to the SQLite database
 # Use different paths for local development vs Streamlit Cloud
-if os.path.exists("instance/trading_journal.db"):
-    DB_PATH = "instance/trading_journal.db"
-elif os.path.exists("./instance/trading_journal.db"):  
-    DB_PATH = "./instance/trading_journal.db"
-else:
-    # Create a fallback in-memory database for demo purposes when deployed
-    DB_PATH = ":memory:"
-    st.warning("Running in demo mode: Using in-memory database. Your data will not be saved.")
+DB_PATH = None
+
+# Try different database paths
+possible_paths = [
+    "instance/trading_journal.db",
+    "./instance/trading_journal.db",
+    "/tmp/trading_journal.db"  # Temporary path for cloud deployment
+]
+
+for path in possible_paths:
+    if os.path.exists(path):
+        DB_PATH = path
+        break
+
+# If no database exists, create one
+if DB_PATH is None:
+    # Create instance directory if it doesn't exist
+    instance_dir = "instance"
+    if not os.path.exists(instance_dir):
+        try:
+            os.makedirs(instance_dir)
+            DB_PATH = "instance/trading_journal.db"
+        except:
+            # If we can't create instance directory, use temp
+            DB_PATH = "/tmp/trading_journal.db"
+    else:
+        DB_PATH = "instance/trading_journal.db"
+    
+    # Initialize database with schema and sample data
+    st.info("Initializing database with sample data...")
+    initialize_database(DB_PATH)
+
+def initialize_database(db_path):
+    """Initialize database with schema and sample data"""
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    
+    # Create trades table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS trades (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL,
+            exit_date TEXT,
+            ticker TEXT NOT NULL,
+            symbol TEXT NOT NULL,
+            direction TEXT NOT NULL,
+            trade_type TEXT NOT NULL,
+            entry_price REAL NOT NULL,
+            exit_price REAL,
+            quantity INTEGER NOT NULL,
+            shares INTEGER NOT NULL,
+            holding_period INTEGER,
+            stop_loss REAL,
+            notes TEXT,
+            profit_loss REAL,
+            pnl REAL,
+            pl_amount REAL,
+            pl_percent REAL,
+            strategy TEXT,
+            entry_emotion TEXT,
+            exit_emotion TEXT,
+            entry_reason TEXT,
+            exit_reason TEXT,
+            followed_plan BOOLEAN,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+    ''')
+    
+    # Check if data already exists
+    cursor.execute("SELECT COUNT(*) FROM trades")
+    if cursor.fetchone()[0] == 0:
+        # Add sample data
+        populate_sample_data(cursor)
+    
+    conn.commit()
+    conn.close()
+
+def populate_sample_data(cursor):
+    """Populate database with sample trading data"""
+    tickers = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'AMD']
+    strategies = ['Day Trade', 'Swing', 'Position', 'Scalp', 'Momentum']
+    directions = ['Long', 'Short']
+    
+    sample_trades = []
+    today = datetime.now()
+    
+    for i in range(20):
+        # Random date within last 90 days
+        days_ago = random.randint(1, 90)
+        trade_date = (today - timedelta(days=days_ago)).strftime('%Y-%m-%d')
+        
+        ticker = random.choice(tickers)
+        direction = random.choice(directions)
+        strategy = random.choice(strategies)
+        
+        # Generate prices
+        base_price = random.uniform(50, 500)
+        entry_price = round(base_price, 2)
+        
+        # 60% win rate
+        is_winner = random.random() > 0.4
+        price_change = random.uniform(0.02, 0.15)  # 2-15% change
+        
+        if direction == 'Long':
+            if is_winner:
+                exit_price = round(entry_price * (1 + price_change), 2)
+            else:
+                exit_price = round(entry_price * (1 - price_change), 2)
+        else:  # Short
+            if is_winner:
+                exit_price = round(entry_price * (1 - price_change), 2)
+            else:
+                exit_price = round(entry_price * (1 + price_change), 2)
+        
+        quantity = random.randint(10, 500)
+        
+        # Calculate P&L
+        if direction == 'Long':
+            pnl = (exit_price - entry_price) * quantity
+        else:
+            pnl = (entry_price - exit_price) * quantity
+        
+        pnl = round(pnl, 2)
+        
+        trade_data = (
+            trade_date,          # date
+            None,                # exit_date
+            ticker,              # ticker
+            ticker,              # symbol
+            direction,           # direction
+            'Buy' if direction == 'Long' else 'Sell',  # trade_type
+            entry_price,         # entry_price
+            exit_price,          # exit_price
+            quantity,            # quantity
+            quantity,            # shares
+            random.randint(1, 15),  # holding_period
+            None,                # stop_loss
+            None,                # notes
+            pnl,                 # profit_loss
+            pnl,                 # pnl
+            pnl,                 # pl_amount
+            round((pnl / (entry_price * quantity)) * 100, 2),  # pl_percent
+            strategy,            # strategy
+            None,                # entry_emotion
+            None,                # exit_emotion
+            None,                # entry_reason
+            None,                # exit_reason
+            None,                # followed_plan
+            datetime.now().isoformat(),  # created_at
+            datetime.now().isoformat()   # updated_at
+        )
+        
+        sample_trades.append(trade_data)
+    
+    # Insert sample data
+    cursor.executemany('''
+        INSERT INTO trades (
+            date, exit_date, ticker, symbol, direction, trade_type,
+            entry_price, exit_price, quantity, shares, holding_period,
+            stop_loss, notes, profit_loss, pnl, pl_amount, pl_percent,
+            strategy, entry_emotion, exit_emotion, entry_reason, exit_reason,
+            followed_plan, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', sample_trades)
 
 def get_db_connection():
     try:
@@ -39,63 +197,38 @@ def get_db_connection():
 def load_trades():
     conn = get_db_connection()
     if conn is None:
-        # Return empty DataFrame if connection failed
-        st.error("Unable to connect to database. Using sample data.")
-        # Create sample data for demo purposes
-        sample_data = {
-            'date': pd.date_range(start='2025-01-01', periods=5),
-            'ticker': ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'],
-            'symbol': ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'],
-            'direction': ['Long', 'Short', 'Long', 'Long', 'Short'],
-            'entry_price': [150.25, 350.75, 2800.50, 3200.00, 900.50],
-            'exit_price': [155.50, 340.25, 2850.75, 3300.00, 850.25],
-            'quantity': [10, 5, 2, 3, 15],
-            'profit_loss': [52.50, 52.50, 100.50, 300.00, 753.75],
-            'pnl': [52.50, -52.50, 100.50, 300.00, -753.75],
-            'strategy': ['Swing', 'Day Trade', 'Swing', 'Position', 'Day Trade'],
-            'id': [1, 2, 3, 4, 5]
-        }
-        return pd.DataFrame(sample_data)
+        st.error("Unable to connect to database.")
+        return pd.DataFrame(columns=['date', 'ticker', 'symbol', 'direction', 'entry_price', 'exit_price', 'quantity', 'pnl', 'strategy', 'id'])
     
     try:
-        # First check if the trades table exists
-        check_query = "SELECT name FROM sqlite_master WHERE type='table' AND name='trades'"
-        tables = pd.read_sql_query(check_query, conn)
-        
-        if len(tables) == 0:
-            # Table doesn't exist, return empty DataFrame with sample data
-            conn.close()
-            st.info("No trades table found. Using sample data for demonstration.")
-            # Create sample data structure
-            sample_data = {
-                'date': pd.date_range(start='2025-01-01', periods=5),
-                'ticker': ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'],
-                'symbol': ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'],
-                'direction': ['Long', 'Short', 'Long', 'Long', 'Short'],
-                'entry_price': [150.25, 350.75, 2800.50, 3200.00, 900.50],
-                'exit_price': [155.50, 340.25, 2850.75, 3300.00, 850.25],
-                'quantity': [10, 5, 2, 3, 15],
-                'profit_loss': [52.50, 52.50, 100.50, 300.00, 753.75],
-                'pnl': [52.50, -52.50, 100.50, 300.00, -753.75],
-                'strategy': ['Swing', 'Day Trade', 'Swing', 'Position', 'Day Trade'],
-                'id': [1, 2, 3, 4, 5]
-            }
-            return pd.DataFrame(sample_data)
-        
-        # Table exists, get the data
+        # Get data from trades table
         query = "SELECT * FROM trades ORDER BY date DESC"
         trades_df = pd.read_sql_query(query, conn)
         conn.close()
         
         # Convert date string to datetime object
-        if 'date' in trades_df.columns:
+        if 'date' in trades_df.columns and len(trades_df) > 0:
             trades_df['date'] = pd.to_datetime(trades_df['date'])
         
+        # Ensure required columns exist
+        required_columns = ['ticker', 'symbol', 'direction', 'entry_price', 'exit_price', 'quantity', 'pnl', 'strategy']
+        for col in required_columns:
+            if col not in trades_df.columns:
+                if col == 'symbol':
+                    trades_df[col] = trades_df.get('ticker', '')
+                elif col == 'quantity':
+                    trades_df[col] = trades_df.get('shares', 0)
+                elif col == 'pnl':
+                    trades_df[col] = trades_df.get('profit_loss', 0.0)
+                else:
+                    trades_df[col] = None
+        
         return trades_df
+        
     except Exception as e:
         st.error(f"Error loading trades data: {e}")
-        # Return empty DataFrame with appropriate structure
-        return pd.DataFrame(columns=['date', 'symbol', 'direction', 'entry_price', 'exit_price', 'quantity', 'profit_loss'])
+        conn.close()
+        return pd.DataFrame(columns=['date', 'ticker', 'symbol', 'direction', 'entry_price', 'exit_price', 'quantity', 'pnl', 'strategy', 'id'])
 
 # Sidebar navigation
 st.sidebar.title("Trading Journal")

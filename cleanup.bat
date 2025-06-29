@@ -10,6 +10,20 @@ direct_install.bat^
 setup_streamlit.bat^
 install_streamlit.ps1^
 setup_and_run.bat^
+test_simplified.ps1^
+streamlit_test.py^
+streamlit_test_basic.py^
+streamlit_debug.py^
+debug_streamlit.bat^
+fresh_install.bat^
+run_direct.bat^
+run_headless.bat^
+run_latest.bat^
+install_direct.bat^
+install_latest.bat^
+test_streamlit.bat^
+run_streamlit.bat^
+minimal_test.py^
 __pycache__^
 .vercel^
 .venv
@@ -40,13 +54,17 @@ echo.
 echo The following essential files have been kept:
 echo - streamlit_app.py (Streamlit application)
 echo - app.py (Flask application)
-echo - launch_streamlit.bat (Streamlit launcher)
-echo - requirements.txt (Project dependencies)
+echo - launch_streamlit.bat (Windows batch launcher)
+echo - launch_streamlit.ps1 (PowerShell launcher)
+echo - requirements.txt (Project dependencies for cloud deployment)
+echo - requirements-streamlit.txt (Streamlit-specific dependencies)
+echo - .streamlit/config.toml (Streamlit configuration)
 echo - push_to_github.bat (GitHub push script)
 echo - models/ (Data models)
 echo - templates/ (HTML templates)
 echo - static/ (Static assets)
 echo - README.md (Documentation)
+echo - LICENSE (License file)
 
 echo.
 echo Cleanup complete!
