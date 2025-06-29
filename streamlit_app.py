@@ -17,38 +17,39 @@ st.set_page_config(
 )
 
 # Connect to the SQLite database
-# Use different paths for local development vs Streamlit Cloud
-DB_PATH = None
-
-# Try different database paths
-possible_paths = [
-    "instance/trading_journal.db",
-    "./instance/trading_journal.db",
-    "/tmp/trading_journal.db"  # Temporary path for cloud deployment
-]
-
-for path in possible_paths:
-    if os.path.exists(path):
-        DB_PATH = path
-        break
-
-# If no database exists, create one
-if DB_PATH is None:
-    # Create instance directory if it doesn't exist
+# Detect deployment environment
+def get_database_path():
+    """Get the appropriate database path based on deployment environment"""
+    
+    # Check if running on Streamlit Cloud
+    if 'STREAMLIT_SHARING' in os.environ or 'STREAMLIT_CLOUD' in os.environ:
+        # Use temp directory for Streamlit Cloud
+        return "/tmp/trading_journal.db"
+    
+    # Check other cloud platforms
+    if any(key in os.environ for key in ['HEROKU', 'RAILWAY_ENVIRONMENT', 'RENDER']):
+        return "/tmp/trading_journal.db"
+    
+    # Try different database paths for local development
+    possible_paths = [
+        "instance/trading_journal.db",
+        "./instance/trading_journal.db"
+    ]
+    
+    for path in possible_paths:
+        if os.path.exists(path):
+            return path
+    
+    # Default: create in instance directory
     instance_dir = "instance"
     if not os.path.exists(instance_dir):
         try:
             os.makedirs(instance_dir)
-            DB_PATH = "instance/trading_journal.db"
         except:
             # If we can't create instance directory, use temp
-            DB_PATH = "/tmp/trading_journal.db"
-    else:
-        DB_PATH = "instance/trading_journal.db"
+            return "/tmp/trading_journal.db"
     
-    # Initialize database with schema and sample data
-    st.info("Initializing database with sample data...")
-    initialize_database(DB_PATH)
+    return "instance/trading_journal.db"
 
 def initialize_database(db_path):
     """Initialize database with schema and sample data"""
@@ -183,6 +184,14 @@ def populate_sample_data(cursor):
             followed_plan, created_at, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', sample_trades)
+
+# Get database path
+DB_PATH = get_database_path()
+
+# Initialize database if it doesn't exist
+if not os.path.exists(DB_PATH):
+    st.info("🚀 Initializing database with sample trading data...")
+    initialize_database(DB_PATH)
 
 def get_db_connection():
     try:
